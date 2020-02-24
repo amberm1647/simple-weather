@@ -14,10 +14,11 @@ import com.example.android.lifecycleweather.utils.OpenWeatherMapUtils;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.List;
 
 public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.ForecastItemViewHolder> {
 
-    private ArrayList<ForecastItem> mForecastItems;
+    private List<ForecastItem> mForecastItems;
     private OnForecastItemClickListener mForecastItemClickListener;
 
     public interface OnForecastItemClickListener {
@@ -28,7 +29,7 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
         mForecastItemClickListener = clickListener;
     }
 
-    public void updateForecastItems(ArrayList<ForecastItem> forecastItems) {
+    public void updateForecastItems(List<ForecastItem> forecastItems) {
         mForecastItems = forecastItems;
         notifyDataSetChanged();
     }

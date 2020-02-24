@@ -1,10 +1,15 @@
 package com.example.android.lifecycleweather;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
@@ -18,9 +23,11 @@ import com.example.android.lifecycleweather.data.ForecastItem;
 import com.example.android.lifecycleweather.data.WeatherPreferences;
 import com.example.android.lifecycleweather.utils.NetworkUtils;
 import com.example.android.lifecycleweather.utils.OpenWeatherMapUtils;
+import com.example.android.lifecycleweather.data.Status;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ForecastAdapter.OnForecastItemClickListener {
 
@@ -31,6 +38,8 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.O
     private ProgressBar mLoadingIndicatorPB;
     private TextView mLoadingErrorMessageTV;
     private ForecastAdapter mForecastAdapter;
+
+    private ForecastViewModel mViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +61,65 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.O
         mForecastItemsRV.setLayoutManager(new LinearLayoutManager(this));
         mForecastItemsRV.setHasFixedSize(true);
 
-        loadForecast();
+        mViewModel = new ViewModelProvider(this).get(ForecastViewModel.class);
+
+        mViewModel.getForecastResults().observe(this, new Observer<List<ForecastItem>>() {
+            @Override
+            public void onChanged(List<ForecastItem> forecastItems) {
+                mForecastAdapter.updateForecastItems(forecastItems);
+            }
+        });
+
+        mViewModel.getLoadingStatus().observe(this, new Observer<Status>() {
+            @Override
+            public void onChanged(Status status) {
+                if(status == Status.LOADING) {
+                    mLoadingIndicatorPB.setVisibility(View.VISIBLE);
+                } else if(status == Status.SUCCESS) {
+                    mLoadingIndicatorPB.setVisibility(View.INVISIBLE);
+                    mForecastItemsRV.setVisibility(View.VISIBLE);
+                    mLoadingErrorMessageTV.setVisibility(View.INVISIBLE);
+                } else {
+                    mLoadingIndicatorPB.setVisibility(View.INVISIBLE);
+                    mForecastItemsRV.setVisibility(View.INVISIBLE);
+                    mLoadingErrorMessageTV.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+        getForecast();
+
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "onStart()");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume()");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause()");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG, "onStop()");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy()");
     }
 
     @Override
@@ -74,18 +141,14 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.O
             case R.id.action_location:
                 showForecastLocation();
                 return true;
+            case R.id.action_settings:
+                Log.d(TAG, "clicked on settings");
+                Intent intent = new Intent(this, SettingsActivity.class);
+                startActivity(intent);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    public void loadForecast() {
-        String openWeatherMapForecastURL = OpenWeatherMapUtils.buildForecastURL(
-                WeatherPreferences.getDefaultForecastLocation(),
-                WeatherPreferences.getDefaultTemperatureUnits()
-        );
-        Log.d(TAG, "got forecast url: " + openWeatherMapForecastURL);
-        new OpenWeatherMapForecastTask().execute(openWeatherMapForecastURL);
     }
 
     public void showForecastLocation() {
@@ -98,37 +161,18 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.O
         }
     }
 
-    class OpenWeatherMapForecastTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            mLoadingIndicatorPB.setVisibility(View.VISIBLE);
-        }
+    private void getForecast() {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String location = preferences.getString(
+                getString(R.string.pref_location_key), ""
+        );
 
-        @Override
-        protected String doInBackground(String... params) {
-            String openWeatherMapURL = params[0];
-            String forecastJSON = null;
-            try {
-                forecastJSON = NetworkUtils.doHTTPGet(openWeatherMapURL);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return forecastJSON;
-        }
+        String units = preferences.getString(
+                getString(R.string.pref_units_key),
+                getString(R.string.pref_units_default)
+        );
 
-        @Override
-        protected void onPostExecute(String forecastJSON) {
-            mLoadingIndicatorPB.setVisibility(View.INVISIBLE);
-            if (forecastJSON != null) {
-                mLoadingErrorMessageTV.setVisibility(View.INVISIBLE);
-                mForecastItemsRV.setVisibility(View.VISIBLE);
-                ArrayList<ForecastItem> forecastItems = OpenWeatherMapUtils.parseForecastJSON(forecastJSON);
-                mForecastAdapter.updateForecastItems(forecastItems);
-            } else {
-                mForecastItemsRV.setVisibility(View.INVISIBLE);
-                mLoadingErrorMessageTV.setVisibility(View.VISIBLE);
-            }
-        }
+        mViewModel.loadForecastResults(location, units);
     }
+
 }
