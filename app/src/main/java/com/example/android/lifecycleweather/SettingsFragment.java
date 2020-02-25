@@ -2,17 +2,22 @@ package com.example.android.lifecycleweather;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.util.Log;
+
 
 import androidx.preference.EditTextPreference;
 import androidx.preference.PreferenceFragmentCompat;
 
 public class SettingsFragment extends PreferenceFragmentCompat
 implements SharedPreferences.OnSharedPreferenceChangeListener {
+    private static final String TAG = SettingsFragment.class.getSimpleName();
+
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         addPreferencesFromResource(R.xml.prefs);
-        //EditTextPreference locationPref = findPreference(getString(R.string.pref_location_key));
-        //locationPref.setSummary(locationPref.getText());
+        EditTextPreference locationPref = findPreference(getString(R.string.pref_location_key));
+        locationPref.setSummary(locationPref.getText());
     }
 
     @Override
@@ -21,6 +26,7 @@ implements SharedPreferences.OnSharedPreferenceChangeListener {
             EditTextPreference preference = findPreference(key);
             preference.setSummary(preference.getText());
         }
+
     }
 
     @Override

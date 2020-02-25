@@ -1,22 +1,30 @@
 package com.example.android.lifecycleweather;
 
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.preference.PreferenceManager;
+
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.content.SharedPreferences;
+import android.util.Log;
+
 
 import com.bumptech.glide.Glide;
 import com.example.android.lifecycleweather.data.ForecastItem;
-import com.example.android.lifecycleweather.data.WeatherPreferences;
 import com.example.android.lifecycleweather.utils.OpenWeatherMapUtils;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.lang.String;
 
 public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.ForecastItemViewHolder> {
+
+    private static final String TAG = ForecastAdapter.class.getSimpleName();
 
     private List<ForecastItem> mForecastItems;
     private OnForecastItemClickListener mForecastItemClickListener;
@@ -55,6 +63,7 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
         holder.bind(mForecastItems.get(position));
     }
 
+
     class ForecastItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         private TextView mForecastDateTV;
         private TextView mForecastTempDescriptionTV;
@@ -68,11 +77,30 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
             itemView.setOnClickListener(this);
         }
 
+        private String getUnitsAbbr() {
+            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(mForecastTempDescriptionTV.getContext());
+            String units = preferences.getString(mForecastTempDescriptionTV.getContext().getString(R.string.pref_units_key),
+                    mForecastDateTV.getContext().getString(R.string.pref_units_default));
+
+            Log.d(TAG, "binding units:"+units);
+
+            switch(units) {
+                case "imperial":
+                    return "F";
+                case "metric":
+                    return "C";
+                case "kelvin":
+                    return "K";
+                default:
+                    return "";
+            }
+        }
+
         public void bind(ForecastItem forecastItem) {
             String dateString = DateFormat.getDateTimeInstance().format(forecastItem.dateTime);
             String detailString = mForecastTempDescriptionTV.getContext().getString(
                     R.string.forecast_item_details, forecastItem.temperature,
-                    WeatherPreferences.getDefaultTemperatureUnitsAbbr(), forecastItem.description
+                    getUnitsAbbr(), forecastItem.description
             );
             String iconURL = OpenWeatherMapUtils.buildIconURL(forecastItem.icon);
             mForecastDateTV.setText(dateString);

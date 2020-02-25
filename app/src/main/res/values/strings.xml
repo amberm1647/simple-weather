@@ -24,5 +24,5 @@
 
     <string name="pref_location_key" translatable="false">pref_location</string>
     <string name="pref_location_title">Location</string>
-    <string name="pref_location_default">Corvallis</string>
+    <string name="pref_location_default">Corvallis,OR,US</string>
 </resources>

@@ -3,18 +3,22 @@ package com.example.android.lifecycleweather;
 import android.content.Intent;
 import androidx.core.app.ShareCompat;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.PreferenceManager;
+
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.content.SharedPreferences;
+
 
 import com.bumptech.glide.Glide;
 import com.example.android.lifecycleweather.data.ForecastItem;
-import com.example.android.lifecycleweather.data.WeatherPreferences;
 import com.example.android.lifecycleweather.utils.OpenWeatherMapUtils;
 
 import java.text.DateFormat;
+import java.lang.String;
 
 public class ForecastItemDetailActivity extends AppCompatActivity {
 
@@ -65,13 +69,41 @@ public class ForecastItemDetailActivity extends AppCompatActivity {
         }
     }
 
+    private String getLocation() {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        return preferences.getString(
+                getString(R.string.pref_location_key),
+                getString(R.string.pref_location_default)
+        );
+    }
+
+    private String getUnitsAbbr() {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String units = preferences.getString(
+                getString(R.string.pref_units_key),
+                getString(R.string.pref_units_default)
+        );
+
+        switch(units) {
+            case "imperial":
+                return "F";
+            case "metric":
+                return "C";
+            case "kelvin":
+                return "K";
+            default:
+                return "";
+        }
+    }
+
     public void shareForecast() {
         if (mForecastItem != null) {
+
             String dateString = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
                     .format(mForecastItem.dateTime);
             String shareText = getString(R.string.forecast_item_share_text,
-                    WeatherPreferences.getDefaultForecastLocation(), dateString,
-                    mForecastItem.temperature, WeatherPreferences.getDefaultTemperatureUnitsAbbr(),
+                    getLocation(), dateString,
+                    mForecastItem.temperature, getUnitsAbbr(),
                     mForecastItem.description);
 
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
@@ -86,10 +118,10 @@ public class ForecastItemDetailActivity extends AppCompatActivity {
     private void fillInLayout(ForecastItem forecastItem) {
         String dateString = DateFormat.getDateTimeInstance().format(forecastItem.dateTime);
         String detailString = getString(R.string.forecast_item_details, forecastItem.temperature,
-                WeatherPreferences.getDefaultTemperatureUnitsAbbr(), forecastItem.description);
+                getUnitsAbbr(), forecastItem.description);
         String lowHighTempString = getString(R.string.forecast_item_low_high_temp,
                 forecastItem.temperatureLow, forecastItem.temperatureHigh,
-                WeatherPreferences.getDefaultTemperatureUnitsAbbr());
+                getUnitsAbbr());
 
         String windString = getString(R.string.forecast_item_wind, forecastItem.windSpeed,
                 forecastItem.windDirection);

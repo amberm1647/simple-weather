@@ -20,7 +20,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.android.lifecycleweather.data.ForecastItem;
-import com.example.android.lifecycleweather.data.WeatherPreferences;
 import com.example.android.lifecycleweather.utils.NetworkUtils;
 import com.example.android.lifecycleweather.utils.OpenWeatherMapUtils;
 import com.example.android.lifecycleweather.data.Status;
@@ -49,8 +48,14 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.O
         // Remove shadow under action bar.
         getSupportActionBar().setElevation(0);
 
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String location = preferences.getString(
+                getString(R.string.pref_location_key),
+                getString(R.string.pref_location_default)
+        );
+
         mForecastLocationTV = findViewById(R.id.tv_forecast_location);
-        mForecastLocationTV.setText(WeatherPreferences.getDefaultForecastLocation());
+        mForecastLocationTV.setText(location);
 
         mLoadingIndicatorPB = findViewById(R.id.pb_loading_indicator);
         mLoadingErrorMessageTV = findViewById(R.id.tv_loading_error_message);
@@ -87,7 +92,6 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.O
             }
         });
 
-        getForecast();
 
 
     }
@@ -96,6 +100,9 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.O
     protected void onStart() {
         super.onStart();
         Log.d(TAG, "onStart()");
+        getForecast();
+        Log.d(TAG, "getting new forecast...");
+
     }
 
     @Override
@@ -152,8 +159,13 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.O
     }
 
     public void showForecastLocation() {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String location = preferences.getString(
+                getString(R.string.pref_location_key), ""
+        );
+
         Uri geoUri = Uri.parse("geo:0,0").buildUpon()
-                .appendQueryParameter("q", WeatherPreferences.getDefaultForecastLocation())
+                .appendQueryParameter("q", location)
                 .build();
         Intent mapIntent = new Intent(Intent.ACTION_VIEW, geoUri);
         if (mapIntent.resolveActivity(getPackageManager()) != null) {
@@ -164,13 +176,18 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.O
     private void getForecast() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         String location = preferences.getString(
-                getString(R.string.pref_location_key), ""
+                getString(R.string.pref_location_key),
+                getString(R.string.pref_location_default)
         );
+
+        Log.d(TAG, "get location from preferences:" + location);
 
         String units = preferences.getString(
                 getString(R.string.pref_units_key),
                 getString(R.string.pref_units_default)
         );
+
+        mForecastLocationTV.setText(location);
 
         mViewModel.loadForecastResults(location, units);
     }
